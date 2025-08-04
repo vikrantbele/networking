@@ -14,9 +14,10 @@ clean:
 	- rm -f bin/*
 
 bb:
-	gcc sender2.c -o sender2
+	gcc sender.c -o sender
 	gcc receiver.c -o receiver
 	./receiver
 
 gen:
+
 	for c in {A..Z}; do printf '%*s\n' 1024 '' | tr ' ' "$c"; done > output.txt
