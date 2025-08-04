@@ -7,16 +7,13 @@
 #include <fcntl.h>
 #include "my_protocol.h"
 
-#define BUFFER_SIZE 1024
-
 int getPackets(){
     printf("getsPacets\n");
     char *file_name = "output2.png";
-    // int total_file_size = 96400 ;
     int total_file_size = 30728;
-    int packet_size = BUFFER_SIZE;
-    int total_packets = total_file_size/(packet_size- (sizeof(int)*3));
-    if (total_file_size % (packet_size- (sizeof(int)*3)) > 0 )
+    int packet_size = PACKET_SIZE;
+    int total_packets = total_file_size/(RAW_DATA_BYTES_SIZE);
+    if (total_file_size % (RAW_DATA_BYTES_SIZE) > 0 )
         total_packets++;
     int received_packets_flags[total_packets];
     struct PACKET packet_data;
@@ -92,16 +89,16 @@ int getPackets(){
 
         // printf("sizeof(packet_data): %ld\n",sizeof(packet_data));
 
-        // int received_bytes = receive_packet((void *)&packet_data, BUFFER_SIZE);
+        // int received_bytes = receive_packet((void *)&packet_data, PACKET_SIZE);
 
-        ssize_t recv_len = recvfrom(sockfd, (void *) &packet_data, BUFFER_SIZE, 0,
+        ssize_t recv_len = recvfrom(sockfd, (void *) &packet_data, PACKET_SIZE, 0,
                                     (struct sockaddr*)&sender_addr, &addr_len);
 
         printf("Data Received : %ld packet bytes\n", recv_len);
 
-        printf("packet_type : %d\n", packet_data.packet_type);
-        printf("packet_number : %d\n", packet_data.packet_number);
-        printf("no_of_raw_data_bytes : %d\n", packet_data.no_of_raw_data_bytes );
+        printf("packet_type : %d\n", packet_data.metadata.packet_type);
+        printf("packet_number : %d\n", packet_data.metadata.packet_number);
+        printf("no_of_raw_data_bytes : %d\n", packet_data.metadata.no_of_raw_data_bytes );
 
         fflush(stdout);
 
@@ -114,14 +111,14 @@ int getPackets(){
         // printf("Sender Port: %d\n", ntohs(sender_addr.sin_port));
 
         // move lseek to appropriate position
-        int offset = (BUFFER_SIZE- (sizeof(int)*3)) * packet_data.packet_number ;
+        int offset = (PACKET_SIZE- sizeof(struct PACKET_METADTA)) * packet_data.metadata.packet_number ;
         if (lseek(fd, offset, SEEK_SET) == -1) {
             perror("lseek");
             break;
         }
 
-        int bytes_to_write = packet_data.no_of_raw_data_bytes ;
-        if (write(fd, packet_data.packet_raw_data_bytes, bytes_to_write) != bytes_to_write) {
+        int bytes_to_write = packet_data.metadata.no_of_raw_data_bytes ;
+        if (write(fd, packet_data.raw_data_bytes, bytes_to_write) != bytes_to_write) {
             perror("write");
             break;
         }
@@ -129,7 +126,7 @@ int getPackets(){
         printf("written %d bytes in file\n\n", bytes_to_write);
 
         // updat packet flag
-        received_packets_flags[packet_data.packet_number] = 1 ;
+        received_packets_flags[packet_data.metadata.packet_number] = 1 ;
     }
     close(fd);
 

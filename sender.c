@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     printf("Read %ld bytes from '%s'\n", (long)file_size, filename);
 
 
-    int raw_data_buffer_size = BUFFER_SIZE - sizeof(int)*3 ;
+    int raw_data_buffer_size = RAW_DATA_BYTES_SIZE;
     unsigned char raw_data_buffer[raw_data_buffer_size];
     ssize_t bytes_read;
     struct PACKET packet_data = {0};
@@ -49,19 +49,19 @@ int main(int argc, char *argv[]) {
         printf("sizeof(packet_data): %ld\n", sizeof(packet_data));
         memset(&packet_data, 0, sizeof(packet_data));
 
-        packet_data.packet_type = RAWDATA_PACKET;
-        packet_data.packet_number = packet_number_record;
-        packet_data.no_of_raw_data_bytes = bytes_read;
-        memcpy(packet_data.packet_raw_data_bytes, raw_data_buffer, bytes_read);
+        packet_data.metadata.packet_type = DATA_PACKET;
+        packet_data.metadata.packet_number = packet_number_record;
+        packet_data.metadata.no_of_raw_data_bytes = bytes_read;
+        memcpy(packet_data.raw_data_bytes, raw_data_buffer, bytes_read);
 
-        int bytes_to_write = packet_data.no_of_raw_data_bytes;
+        int bytes_to_write = packet_data.metadata.no_of_raw_data_bytes;
 
         // if (write(fd2, packet_data.packet_raw_data_bytes, bytes_to_write) != bytes_to_write) {
         //     perror("write");
         //     break;
         // }
         int bytes_sent = 0;
-        int packet_size = BUFFER_SIZE;
+        int packet_size = PACKET_SIZE;
 
         bytes_sent = sendto(sockfd, (void *)&packet_data, packet_size, 0,
                 (struct sockaddr*)&receiver_addr, sizeof(receiver_addr));
