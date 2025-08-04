@@ -9,45 +9,6 @@
 
 #define BUFFER_SIZE 1024
 
-// int main(int argc, char *argv[]) {
-//     if (argc != 2) {
-//         printf("Usage: %s <port>\n", argv[0]);
-//         return 1;
-//     }
-
-//     int port = atoi(argv[1]);
-
-//     int sockfd;
-//     char buffer[BUFFER_SIZE];
-//     struct sockaddr_in receiver_addr, sender_addr;
-//     socklen_t addr_len = sizeof(sender_addr);
-
-//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-//     memset(&receiver_addr, 0, sizeof(receiver_addr));
-//     receiver_addr.sin_family = AF_INET;
-//     receiver_addr.sin_port = htons(port);
-//     receiver_addr.sin_addr.s_addr = INADDR_ANY;
-
-//     bind(sockfd, (struct sockaddr*)&receiver_addr, sizeof(receiver_addr));
-
-//     ssize_t recv_len = recvfrom(sockfd, buffer, sizeof(buffer) - 1, 0,
-//                                 (struct sockaddr*)&sender_addr, &addr_len);
-//     if (recv_len < 0) {
-//         perror("recvfrom");
-//         return 1;
-//     }
-
-//     buffer[recv_len] = '\0';
-
-//     printf("Received: %s\n", buffer);
-//     printf("Sender IP: %s\n", inet_ntoa(sender_addr.sin_addr));
-//     printf("Sender Port: %d\n", ntohs(sender_addr.sin_port));
-
-//     return 0;
-// }
-
-
 int getPackets(){
     printf("getsPacets\n");
     char *file_name = "output2.png";
