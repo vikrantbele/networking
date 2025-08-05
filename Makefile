@@ -11,12 +11,16 @@ build:
 	./bin/receiver
 
 clean:
-	- rm -f bin/*
+	- rm receiver sender output2.png
 
-bb:
+bb: clean
 	gcc sender.c -o sender
 	gcc receiver.c -o receiver
-	./receiver
+send:
+	./sender file.png
+rec: bb
+	./receiver 
+	cmp file.png output2.png
 
 gen:
 

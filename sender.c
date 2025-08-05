@@ -10,8 +10,13 @@
 #include <arpa/inet.h>
 
 int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
 
-    const char *filename = "file.png";
+    const char *filename = argv[1];
+
     int fd = open(filename, O_RDONLY);
     if (fd < 0) {
         perror("open");
@@ -19,6 +24,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Get file size using fstat
+    // implent  way to know file size using lseek()
     struct stat file_stat;
     if (fstat(fd, &file_stat) < 0) {
         perror("fstat");
@@ -32,21 +38,24 @@ int main(int argc, char *argv[]) {
     int raw_data_buffer_size = RAW_DATA_BYTES_SIZE;
     unsigned char raw_data_buffer[raw_data_buffer_size];
     ssize_t bytes_read;
+
     struct PACKET packet_data = {0};
     int packet_number_record = 0;
 
     int port = 12345;
     const char *receiver_ipv4 = "127.0.0.1";
+
     struct sockaddr_in receiver_addr;
     receiver_addr.sin_family = AF_INET;
     receiver_addr.sin_port = htons(port);
     receiver_addr.sin_addr.s_addr = inet_addr(receiver_ipv4);
+
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
 
     while ((bytes_read = read(fd, raw_data_buffer, raw_data_buffer_size)) > 0) {
         printf("Read %zd bytes\n", bytes_read);
-        printf("sizeof(packet_data): %ld\n", sizeof(packet_data));
+        // printf("sizeof(packet_data): %ld\n", sizeof(packet_data));
         memset(&packet_data, 0, sizeof(packet_data));
 
         packet_data.metadata.packet_type = DATA_PACKET;
@@ -71,9 +80,6 @@ int main(int argc, char *argv[]) {
         }
         printf("Sent buffer (%d bytes)\n", bytes_sent);
 
-        
-
-        printf("write call successfull\n\n");
         memset(&raw_data_buffer, 0, raw_data_buffer_size);
         packet_number_record++;
     }
