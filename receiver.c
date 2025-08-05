@@ -93,6 +93,15 @@ void raw_data_packet_handler(int file_fd, struct PACKET packet_data){
 
 }
 
+int count_zeros(int *array, int size){
+    int count = 0 ;
+    for (int i=0; i< size ;i++){
+        if( array[i] == 0)
+            count++;
+    }
+    return count;
+}
+
 int getPackets(){
     printf("getsPacets\n");
     char *file_name = "output2.png";
@@ -100,7 +109,7 @@ int getPackets(){
 
     int file_fd = open_file(file_name, total_file_size);
 
-    int packet_size = PACKET_SIZE;
+    // int packet_size = PACKET_SIZE;
     int total_packets = total_file_size/(RAW_DATA_BYTES_SIZE);
     if (total_file_size % (RAW_DATA_BYTES_SIZE) > 0 )
         total_packets++;
@@ -119,11 +128,10 @@ int getPackets(){
 
     // setting up socket should be first step;
     int sockfd = setup_socket_listen(12345);
+    int remaining_packets = 0;
 
-    for (int i=0; i<total_packets; i++){
-
-        printf("In packet get loop %d\n", i);
-        fflush(stdout);
+    // for (int i=0; i<total_packets+1; i++){
+    while(1){
 
         memset(&packet_data, 0, sizeof(packet_data));
 
@@ -143,17 +151,48 @@ int getPackets(){
         printf("packet_number : %d\n", packet_data.metadata.packet_number);
         printf("no_of_raw_data_bytes : %d\n", packet_data.metadata.no_of_raw_data_bytes );
 
+
         if (packet_data.metadata.packet_type == INFO_PACKET)
         {
             // process information packet
+            printf("Info Packet received");
+            struct FIle_INFO_METADATA file_info;
+            memcpy(&file_info, packet_data.raw_data_bytes, sizeof(struct FIle_INFO_METADATA));
+            printf("fiel_info.total_file_size: %d\n", file_info.total_file_size);
+            printf("fiel_info.total_packets: %d\n", file_info.total_packets);
+            printf("fiel_info.packet_size: %d\n", file_info.packet_size);
+            printf("fiel_info.file_name: %s\n", file_info.file_name);
+
+            total_packets = file_info.total_packets;
+            memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*total_packets);
+
+            // open the file of given file size and set fd and total packets to be recived
+
             continue;
         }
-        else if(packet_data.metadata.packet_type == DATA_PACKET){
+        
+        remaining_packets = count_zeros(received_packets_flags, total_packets);
+        if (remaining_packets <= 0){
+            close(file_fd);
+            file_fd = -1;
+            continue;
+        }
+
+
+        // if not last packet check if fd is closed, if flosed then continue
+        if (file_fd < 0 ){
+            continue;
+        }
+
+        // also add that fd is not negative
+        if(packet_data.metadata.packet_type == DATA_PACKET){
             printf("Data packet: %d\n", packet_data.metadata.packet_number);
+            // mark the packet number for tracking
+
             raw_data_packet_handler(file_fd, packet_data);
 
             // updat packet flag
-            received_packets_flags[packet_data.metadata.packet_number] = 1 ;
+            received_packets_flags[packet_data.metadata.packet_number] = 1;
         }
         else{
             printf("ERROR: Packet Type Cannot be identified\n");

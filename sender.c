@@ -35,6 +35,10 @@ int main(int argc, char *argv[]) {
     printf("Read %ld bytes from '%s'\n", (long)file_size, filename);
 
 
+
+
+
+
     int raw_data_buffer_size = RAW_DATA_BYTES_SIZE;
     unsigned char raw_data_buffer[raw_data_buffer_size];
     ssize_t bytes_read;
@@ -53,7 +57,31 @@ int main(int argc, char *argv[]) {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
 
+
+    // try to send info packet
+    int total_file_size = file_size;
+    int total_packets = total_file_size/(RAW_DATA_BYTES_SIZE);
+    if (total_file_size % (RAW_DATA_BYTES_SIZE) > 0 )
+        total_packets++;
+    struct FIle_INFO_METADATA file_info;
+    file_info.total_file_size = file_size;
+    file_info.total_packets = total_packets;
+    file_info.packet_size = PACKET_SIZE;
+    memset(file_info.file_name, 0 , FIlE_INFO_METADATA_FILE_NAME_MAX_SIZE);
+    strcpy(file_info.file_name,filename);
+    
+
+    packet_data.metadata.packet_type = INFO_PACKET;
+    packet_data.metadata.packet_number = -1;
+    packet_data.metadata.no_of_raw_data_bytes = sizeof(struct FIle_INFO_METADATA);
+    memcpy(packet_data.raw_data_bytes, &file_info, sizeof(struct FIle_INFO_METADATA));
+
+    sendto(sockfd, (void *)&packet_data, PACKET_SIZE, 0, (struct sockaddr*)&receiver_addr, sizeof(receiver_addr));
+
+
     while ((bytes_read = read(fd, raw_data_buffer, raw_data_buffer_size)) > 0) {
+        memset(&packet_data, 0, sizeof(packet_data));
+
         printf("Read %zd bytes\n", bytes_read);
         // printf("sizeof(packet_data): %ld\n", sizeof(packet_data));
         memset(&packet_data, 0, sizeof(packet_data));
