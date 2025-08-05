@@ -104,33 +104,24 @@ int count_zeros(int *array, int size){
 
 int getPackets(){
     printf("getsPacets\n");
-    char *file_name = "output2.png";
-    int total_file_size = 30728;
 
-    int file_fd = open_file(file_name, total_file_size);
-
-    // int packet_size = PACKET_SIZE;
-    int total_packets = total_file_size/(RAW_DATA_BYTES_SIZE);
-    if (total_file_size % (RAW_DATA_BYTES_SIZE) > 0 )
-        total_packets++;
-    int received_packets_flags[total_packets];
-    struct PACKET packet_data;
-
-
-    memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*total_packets);
-
+    int total_packets;
+    int received_packets_flags[1000];
+    memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*1000);
+    
     printf("Socket initialization\n");
-
-
+    
+    
     //initialize and bind the socket
     struct sockaddr_in sender_addr;
     socklen_t addr_len = sizeof(sender_addr);
-
+    
     // setting up socket should be first step;
     int sockfd = setup_socket_listen(12345);
     int remaining_packets = 0;
+    struct PACKET packet_data;
+    int file_fd = -1;
 
-    // for (int i=0; i<total_packets+1; i++){
     while(1){
 
         memset(&packet_data, 0, sizeof(packet_data));
@@ -145,11 +136,10 @@ int getPackets(){
         // printf("Received: %d bytes\n", recv_len);
         // printf("Sender IP: %s\n", inet_ntoa(sender_addr.sin_addr));
         // printf("Sender Port: %d\n", ntohs(sender_addr.sin_port));
-
-        printf("Data Received : %ld packet bytes\n", recv_len);
-        printf("packet_type : %d\n", packet_data.metadata.packet_type);
-        printf("packet_number : %d\n", packet_data.metadata.packet_number);
-        printf("no_of_raw_data_bytes : %d\n", packet_data.metadata.no_of_raw_data_bytes );
+        // printf("Data Received : %ld packet bytes\n", recv_len);
+        // printf("packet_type : %d\n", packet_data.metadata.packet_type);
+        // printf("packet_number : %d\n", packet_data.metadata.packet_number);
+        // printf("no_of_raw_data_bytes : %d\n", packet_data.metadata.no_of_raw_data_bytes );
 
 
         if (packet_data.metadata.packet_type == INFO_PACKET)
@@ -163,21 +153,16 @@ int getPackets(){
             printf("fiel_info.packet_size: %d\n", file_info.packet_size);
             printf("fiel_info.file_name: %s\n", file_info.file_name);
 
+            // open the file of given file size and set fd and total packets to be recived
             total_packets = file_info.total_packets;
             memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*total_packets);
 
-            // open the file of given file size and set fd and total packets to be recived
+            // strcat(file_info.file_name, file_info.file_name);
+            printf("New file would be named as : %s\n",file_info.file_name);
+            file_fd = open_file(file_info.file_name, file_info.total_file_size);
 
             continue;
         }
-        
-        remaining_packets = count_zeros(received_packets_flags, total_packets);
-        if (remaining_packets <= 0){
-            close(file_fd);
-            file_fd = -1;
-            continue;
-        }
-
 
         // if not last packet check if fd is closed, if flosed then continue
         if (file_fd < 0 ){
@@ -187,21 +172,24 @@ int getPackets(){
         // also add that fd is not negative
         if(packet_data.metadata.packet_type == DATA_PACKET){
             printf("Data packet: %d\n", packet_data.metadata.packet_number);
-            // mark the packet number for tracking
 
             raw_data_packet_handler(file_fd, packet_data);
 
-            // updat packet flag
+            // updat packet flag or mark the packet for tracking
             received_packets_flags[packet_data.metadata.packet_number] = 1;
+            
         }
         else{
             printf("ERROR: Packet Type Cannot be identified\n");
         }
-    }
-    close(file_fd);
 
-    for (int i=0; i<total_packets; i++){
-        printf("Packet %d: %d\n", i, received_packets_flags[i]);
+
+        remaining_packets = count_zeros(received_packets_flags, total_packets);
+        if (remaining_packets <= 0){
+            printf("Finished Receiving the file please check if received correctly\n");
+            close(file_fd);
+            file_fd = -1;
+        }
     }
     return 0;
 }

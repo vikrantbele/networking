@@ -1,27 +1,26 @@
-DEST = ../backup
-
 default: prepare clean build
 
 prepare:
-	mkdir -p bin
+	mkdir -p bin/sender
+	mkdir -p bin/receiver
 
 build:
-	gcc sender.c -o bin/sender
-	gcc receiver.c -o bin/receiver
-	./bin/receiver
+	gcc sender.c -o bin/sender/sender
+	gcc receiver.c -o bin/receiver/receiver
 
 clean:
-	- rm receiver sender output2.png
+	- rm bin/sender/sender bin/receiver/*
 
 bb: clean
 	gcc sender.c -o sender
 	gcc receiver.c -o receiver
-send:
-	./sender file.png
-rec: bb
-	./receiver 
-	cmp file.png output2.png
 
+
+test2:
+	cd bin/sender/ && ./sender file.png
+test:
+	cd bin/receiver && ./receiver
+test3:
+	./bin/sender/sender bin/sender/file.png
 gen:
-
 	for c in {A..Z}; do printf '%*s\n' 1024 '' | tr ' ' "$c"; done > output.txt
