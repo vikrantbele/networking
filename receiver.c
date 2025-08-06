@@ -93,7 +93,7 @@ void raw_data_packet_handler(int file_fd, struct PACKET packet_data){
 
 }
 
-int count_zeros(int *array, int size){
+int count_zeros(unsigned char *array, int size){
     int count = 0 ;
     for (int i=0; i< size ;i++){
         if( array[i] == 0)
@@ -106,8 +106,9 @@ int getPackets(){
     printf("getsPacets\n");
 
     int total_packets;
-    int received_packets_flags[1000];
-    memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*1000);
+    const int MAX_PACKETS = 1024*253;
+    unsigned char received_packets_flags[MAX_PACKETS];
+    memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*MAX_PACKETS);
     
     printf("Socket initialization\n");
     

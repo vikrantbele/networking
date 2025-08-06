@@ -5,6 +5,7 @@
 #define DATA_PACKET 1
 
 #define PACKET_SIZE 1024
+// #define MAX_PACKETS 1024*1024*253 
 #define FIlE_INFO_METADATA_FILE_NAME_MAX_SIZE 256
 // NTFS (Windows), FAT32, exFAT, ext4 (Linux), APFS (macOS), HFS+ (macOS)
 // 255 is standard limit by major Operating systems but yet to think on it
