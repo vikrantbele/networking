@@ -1,10 +1,5 @@
 # networking
 
-run the following command in terminal:
-
-# cd bin/sender/ && ./sender file.png (you can replace file.png with your file)
-
-
 To BUILD the code, got main directory and run the following:
 ```bash
 make
