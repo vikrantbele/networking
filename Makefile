@@ -20,7 +20,8 @@ test2:
 	cd bin/sender/ && ./sender file.png
 test:
 	cd bin/receiver && ./receiver
-test3:
-	./bin/sender/sender bin/sender/file.png
+cmp:
+	cmp bin/sender/file.png bin/receiver/file.png
+	ls -l bin/receiver/file.png
 gen:
 	for c in {A..Z}; do printf '%*s\n' 1024 '' | tr ' ' "$c"; done > output.txt

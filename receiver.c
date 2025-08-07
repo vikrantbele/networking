@@ -74,22 +74,49 @@ int open_file(const char *file_name, int total_file_size){
     return fd;
 }
 
-void raw_data_packet_handler(int file_fd, struct PACKET packet_data){
+int raw_data_packet_handler(int file_fd, struct PACKET packet_data){
+    printf("Data packet: %d\n", packet_data.metadata.packet_number);
+
+    if (file_fd < 0 ){
+        printf("ERROR: file_fd is invalid\n");
+        return 1;
+    }
 
     // move lseek to appropriate position
     int offset = (PACKET_SIZE- sizeof(struct PACKET_METADTA)) * packet_data.metadata.packet_number ;
     if (lseek(file_fd, offset, SEEK_SET) == -1) {
         perror("lseek");
-        return;
+        return 1;
     }
 
     int bytes_to_write = packet_data.metadata.no_of_raw_data_bytes ;
     if (write(file_fd, packet_data.raw_data_bytes, bytes_to_write) != bytes_to_write) {
         perror("write");
-        return;
+        return 1;
     }
 
     printf("written %d bytes in file\n\n", bytes_to_write);
+    return 0;
+
+}
+
+void info_packet_handler(int *file_fd, struct PACKET packet_data, int *total_packets, unsigned char *received_packets_flags){
+    // process information packet
+    printf("Info Packet received");
+    struct FIle_INFO_METADATA file_info;
+    memcpy(&file_info, packet_data.raw_data_bytes, sizeof(struct FIle_INFO_METADATA));
+    printf("fiel_info.total_file_size: %d\n", file_info.total_file_size);
+    printf("fiel_info.total_packets: %d\n", file_info.total_packets);
+    printf("fiel_info.packet_size: %d\n", file_info.packet_size);
+    printf("fiel_info.file_name: %s\n", file_info.file_name);
+
+    // open the file of given file size and set fd and total packets to be recived
+    *total_packets = file_info.total_packets;
+    memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*(file_info.total_packets));
+
+    // strcat(file_info.file_name, file_info.file_name);
+    printf("New file would be named as : %s\n",file_info.file_name);
+    *file_fd = open_file(file_info.file_name, file_info.total_file_size);
 
 }
 
@@ -102,7 +129,7 @@ int count_zeros(unsigned char *array, int size){
     return count;
 }
 
-int getPackets(){
+int start_receiver(){
     printf("getsPacets\n");
 
     int total_packets;
@@ -145,37 +172,17 @@ int getPackets(){
 
         if (packet_data.metadata.packet_type == INFO_PACKET)
         {
-            // process information packet
-            printf("Info Packet received");
-            struct FIle_INFO_METADATA file_info;
-            memcpy(&file_info, packet_data.raw_data_bytes, sizeof(struct FIle_INFO_METADATA));
-            printf("fiel_info.total_file_size: %d\n", file_info.total_file_size);
-            printf("fiel_info.total_packets: %d\n", file_info.total_packets);
-            printf("fiel_info.packet_size: %d\n", file_info.packet_size);
-            printf("fiel_info.file_name: %s\n", file_info.file_name);
-
-            // open the file of given file size and set fd and total packets to be recived
-            total_packets = file_info.total_packets;
-            memset(received_packets_flags, 0, sizeof(received_packets_flags[0])*total_packets);
-
-            // strcat(file_info.file_name, file_info.file_name);
-            printf("New file would be named as : %s\n",file_info.file_name);
-            file_fd = open_file(file_info.file_name, file_info.total_file_size);
-
+            
+            info_packet_handler(&file_fd, packet_data, &total_packets, received_packets_flags);
             continue;
         }
 
-        // if not last packet check if fd is closed, if flosed then continue
-        if (file_fd < 0 ){
-            continue;
-        }
-
-        // also add that fd is not negative
-        if(packet_data.metadata.packet_type == DATA_PACKET){
-            printf("Data packet: %d\n", packet_data.metadata.packet_number);
-
-            raw_data_packet_handler(file_fd, packet_data);
-
+        else if(packet_data.metadata.packet_type == DATA_PACKET){
+            int error = raw_data_packet_handler(file_fd, packet_data);
+            if(error != 0){
+                printf("ERROR: in handling raw packet data\n");
+                continue;
+            }
             // updat packet flag or mark the packet for tracking
             received_packets_flags[packet_data.metadata.packet_number] = 1;
             
@@ -196,5 +203,5 @@ int getPackets(){
 }
 
 int main(){
-    getPackets();
+    start_receiver();
 }
