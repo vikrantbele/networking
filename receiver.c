@@ -120,14 +120,13 @@ void info_packet_handler(int *file_fd, struct PACKET packet_data, int *total_pac
 
 }
 
-int count_zeros(unsigned char *array, int size){
-    int count = 0 ;
-    for (int i=0; i< size ;i++){
-        if( array[i] == 0)
-            count++;
+int track_packets(unsigned char *received_packets_flags, int total_packets, int recived_packet_number, int *remaining_packets){
+    if (received_packets_flags[recived_packet_number] == 0 ){
+        received_packets_flags[recived_packet_number] = 1;
+        (*remaining_packets)--;
     }
-    return count;
 }
+
 
 int start_receiver(){
     printf("getsPacets\n");
@@ -172,8 +171,8 @@ int start_receiver(){
 
         if (packet_data.metadata.packet_type == INFO_PACKET)
         {
-            
             info_packet_handler(&file_fd, packet_data, &total_packets, received_packets_flags);
+            remaining_packets = total_packets ;
             continue;
         }
 
@@ -183,16 +182,17 @@ int start_receiver(){
                 printf("ERROR: in handling raw packet data\n");
                 continue;
             }
-            // updat packet flag or mark the packet for tracking
-            received_packets_flags[packet_data.metadata.packet_number] = 1;
+
+            if (received_packets_flags[packet_data.metadata.packet_number] == 0 ){
+                received_packets_flags[packet_data.metadata.packet_number] = 1;
+                remaining_packets--;
+            }
             
         }
         else{
             printf("ERROR: Packet Type Cannot be identified\n");
         }
 
-
-        remaining_packets = count_zeros(received_packets_flags, total_packets);
         if (remaining_packets <= 0){
             printf("Finished Receiving the file please check if received correctly\n");
             close(file_fd);
