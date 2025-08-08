@@ -129,7 +129,7 @@ int track_packets(unsigned char *received_packets_flags, int total_packets, int 
 
 
 int start_receiver(){
-    printf("getsPacets\n");
+    printf("start_receiver\n");
 
     int total_packets;
     const int MAX_PACKETS = 1024*253;
@@ -176,18 +176,21 @@ int start_receiver(){
             continue;
         }
 
-        else if(packet_data.metadata.packet_type == DATA_PACKET){
+        else if(packet_data.metadata.packet_type == DATA_PACKET)
+        {
+            if (received_packets_flags[packet_data.metadata.packet_number] != 0 ){
+                continue;   // skip if the packet is already received
+            }
+
             int error = raw_data_packet_handler(file_fd, packet_data);
+
             if(error != 0){
                 printf("ERROR: in handling raw packet data\n");
                 continue;
             }
 
-            if (received_packets_flags[packet_data.metadata.packet_number] == 0 ){
-                received_packets_flags[packet_data.metadata.packet_number] = 1;
-                remaining_packets--;
-            }
-            
+            received_packets_flags[packet_data.metadata.packet_number] = 1;
+            remaining_packets--;
         }
         else{
             printf("ERROR: Packet Type Cannot be identified\n");
